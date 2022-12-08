@@ -2,12 +2,15 @@ textarea {
     min-height: 400px;
 }
 
-.read {
+button {
+    margin: 10px;
+}
+.unread {
     background-color: white;
     color: grey;   
 }
 
-.unread {
+.read {
     background-color: rgb(200, 200, 200);
     color: black;
 }

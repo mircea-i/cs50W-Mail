@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
   load_mailbox('inbox');
 });
 
+
 function compose_email() {
 
   // Show compose view and hide other views
@@ -23,6 +24,7 @@ function compose_email() {
   document.querySelector('#compose-subject').value = '';
   document.querySelector('#compose-body').value = '';
 }
+
 
 function send_email() {
   
@@ -39,10 +41,10 @@ function send_email() {
   .then(response => response.json())
   .then(result => {
     console.log(result);
+    load_mailbox('sent');
   });
 }
 
-  
 
 function load_mailbox(mailbox) {
   
@@ -65,11 +67,9 @@ function load_mailbox(mailbox) {
       // Make a rounded row div for each email
       const element = document.createElement('div');
       element.classList.add('row', 'border', 'border-2', 'rounded', 'p-2', 'm-2');
-      element.dataset.id = email.id;
+
+      // When clicked go to view_email
       element.addEventListener('click', () => {view_mail(email.id)});
-      
-        // console.log(email.id);
-      
 
       // Set proper background for each email div
       if (email.read === true) {
@@ -79,98 +79,111 @@ function load_mailbox(mailbox) {
         element.classList.add('unread');
       }
 
-      // Add the timestamp to the row
-      const time = document.createElement('div');
-      time.classList.add('col-sm-auto');
-      time.innerHTML = email.timestamp;
-      element.appendChild(time);
+      // Insert data into each div
+      element.innerHTML = `
+        <div class='col-sm-auto'>${email.timestamp}</div>
+        <div class='col-sm-auto'>${email.sender}</div>
+        <div class='col-lg'>${email.subject}</div>`
 
-      // Add the sender to the row if in inbox
-      if (mailbox === 'inbox') {
-        const sender = document.createElement('div');
-        sender.classList.add('col-sm-auto');
-        sender.innerHTML = email.sender;
-        element.appendChild(sender);
-      }
-
-      // Add the recipient to the row if in send
-      if (mailbox === 'sent') {
-        const sender = document.createElement('div');
-        sender.classList.add('col-sm-auto');
-        sender.innerHTML = email.recipients;
-        element.appendChild(sender);
-      }
-      
-
-      // Add the subject to the row
-      const content = document.createElement('div');
-      content.classList.add('col-lg');
-      content.innerHTML = email.subject;
-      element.appendChild(content);
-
+      // Append each div to #emails-view
       document.querySelector('#emails-view').appendChild(element);  
-  })
-    console.log(emails)
-  })
-
-    function view_mail(id) {
-
-    // Show the current email and hide other views
-    document.querySelector('#emails-view').style.display = 'none';
-    document.querySelector('#email-view').style.display = 'block';
-    document.querySelector('#compose-view').style.display = 'none';
-
-    // Clear the view
-    document.querySelector('#email-view').innerHTML = '';
-
-    // Mark the email as read
-    fetch(`/emails/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        read: true
-      })
     })
-  
-    // Get current email data and display it    
-    fetch(`/emails/${id}`)
-      .then(response => response.json())
-      .then(email => {
-        const element = document.createElement('div');
-        element.classList.add('row', 'border', 'border-2', 'rounded', 'p-2', 'm-2');
-        
-        const sender = document.createElement('div');
-        sender.classList.add('col');
-        sender.innerHTML = `From: ${email.sender}`;
-        element.appendChild(sender);
-
-        const recipient = document.createElement('div');
-        recipient.classList.add('col');
-        recipient.innerHTML = `To: ${email.recipients}`;
-        element.appendChild(recipient);
-
-        const time = document.createElement('div');
-        time.classList.add('col');
-        time.innerHTML = `At: ${email.timestamp}`;
-        element.appendChild(time);
-
-        const body = document.createElement('div');
-        body.classList.add('row', 'border', 'border-2', 'rounded', 'p-2', 'm-2');
-        body.innerHTML = `Message: ${email.body}`;
-    
-      // Check if email is archived
-
-        if (email.archived === false) {
-          archive = document.createElement('button');
-          archive.classList.add('btn-primary');
-          archive.innerHTML = 'Move to archive';
-        }
-
-      document.querySelector('#email-view').appendChild(element);
-      document.querySelector('#email-view').appendChild(body);
-      document.querySelector('#email-view').appendChild(archive);
-      })
-  
-  }
-  
+  })
 }
     
+function view_mail(id) {
+
+  // Show the current email and hide other views
+  document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#email-view').style.display = 'block';
+  document.querySelector('#compose-view').style.display = 'none';
+
+  // Clear the view
+  document.querySelector('#email-view').innerHTML = '';
+
+  // Mark the email as read
+  fetch(`/emails/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      read: true
+    })
+  })
+
+  // Get current email data and display it    
+  fetch(`/emails/${id}`)
+    .then(response => response.json())
+    .then(email => {
+      const element = document.createElement('div');
+      element.classList.add('border', 'border-2', 'rounded', 'p-2', 'm-2');
+      
+      element.innerHTML = `
+      <div>From: ${email.sender}</div>
+      <div>To: ${email.recipients}</div>
+      <div>Subject: ${email.subject}</div>
+      <div>Date: ${email.timestamp}</div>
+      <div>Message: ${email.body}</div>
+      `
+      document.querySelector('#email-view').appendChild(element);
+
+      // Check if user is not sender
+      console.log(email.sender);
+      if (!(document.querySelector('#user-email').value === email.sender)){
+
+        // Handle the archiving
+        const archive_button = document.createElement('button');
+        archive_button.classList.add('btn-primary');
+
+        // Add apropriate text to button
+        if (!email.archived) {
+          archive_button.innerHTML = 'Move to archive';
+        }
+        else {
+          archive_button.innerHTML = 'Move to inbox';
+        }
+
+        // Add listener to button and button to parent
+        archive_button.addEventListener('click', () => {archive_email(email.id, email.archived)});
+        document.querySelector('#email-view').appendChild(archive_button);
+
+        // Handle the reply
+        const reply_button = document.createElement('button');
+        reply_button.classList.add('btn-primary');
+        reply_button.innerHTML = 'Reply';
+        reply_button.addEventListener('click', () => {reply_email(email.id)});
+        document.querySelector('#email-view').appendChild(reply_button);
+      }  
+    })
+  }
+    
+  
+function archive_email(id , parameter) {
+
+  fetch(`/emails/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      archived: !parameter
+      }) 
+    })
+  //load_mailbox('inbox');
+  location.reload();
+  }  
+
+
+function reply_email(id) {
+  fetch(`/emails/${id}`)
+  .then(response => response.json())
+  .then(email => {
+    compose_email();
+    document.querySelector('#compose-recipients').value = email.sender;
+
+    // Handle re at the beginning of the subject
+    if (email.subject.slice(0,3).toLowercase !== 're:') {
+      document.querySelector('#compose-subject').value = 'Re: ' + email.subject;
+    }
+    else {
+      document.querySelector('#compose-subject').value = email.subject;
+    }
+    
+    document.querySelector('#compose-body').value = `On ${email.timestamp} ${email.sender} wrote: ${email.body}`;
+  })
+}
