@@ -38,6 +38,7 @@ function send_email() {
     })
   })
   
+  // Load sent mailbox
   .then(response => response.json())
   .then(result => {
     console.log(result);
@@ -90,7 +91,8 @@ function load_mailbox(mailbox) {
     })
   })
 }
-    
+
+
 function view_mail(id) {
 
   // Show the current email and hide other views
@@ -126,7 +128,7 @@ function view_mail(id) {
       document.querySelector('#email-view').appendChild(element);
 
       // Check if user is not sender
-      console.log(email.sender);
+      //console.log(email.sender);
       if (!(document.querySelector('#user-email').value === email.sender)){
 
         // Handle the archiving
@@ -153,7 +155,7 @@ function view_mail(id) {
         document.querySelector('#email-view').appendChild(reply_button);
       }  
     })
-  }
+}
     
   
 function archive_email(id , parameter) {
@@ -164,9 +166,8 @@ function archive_email(id , parameter) {
       archived: !parameter
       }) 
     })
-  //load_mailbox('inbox');
   location.reload();
-  }  
+}  
 
 
 function reply_email(id) {
@@ -177,7 +178,7 @@ function reply_email(id) {
     document.querySelector('#compose-recipients').value = email.sender;
 
     // Handle re at the beginning of the subject
-    if (email.subject.slice(0,3).toLowercase !== 're:') {
+    if (email.subject.slice(0,3).toLowerCase() !== 're:') {
       document.querySelector('#compose-subject').value = 'Re: ' + email.subject;
     }
     else {
